@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Smart Draft Generator</title>
+    
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        .btn {
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #106ebe;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #dff6dd;
+            color: #1f7a1f;
+            border: 1px solid #a3d9a5;
+        }
+        
+        .status.error {
+            background: #fde7e9;
+            color: #a80000;
+            border: 1px solid #f1aeb5;
+        }
+        
+        .status.info {
+            background: #cfe2ff;
+            color: #084298;
+            border: 1px solid #9ec5fe;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .divider {
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Smart Draft Generator</h2>
+        <p>Configure your reply settings and generate a draft.</p>
+
+        <div class="form-group">
+            <label for="apiKey">API Key</label>
+            <input type="password" id="apiKey" placeholder="Enter API Key" />
+            <button class="btn" onclick="saveApiKey()">Save API Key</button>
+        </div>
+
+        <div class="form-group">
+            <label for="response-type">Response Type</label>
+            <select id="response-type">
+                <option value="proposal">הצעת מחיר</option>
+                <option value="no-aval">חוסר זמינות</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="language">Language</label>
+            <select id="language">
+                <option value="he">Hebrew (עברית)</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="groupType">Group Type</label>
+            <select id="groupType">
+                <option value="tourists_with_accommodation">תיירים עם לינה</option>
+                <option value="tourists_without_accommodation">תיירים ללא לינה</option>
+                <option value="youth_groups">קבוצות נוער</option>
+                <option value="students">סטודנטים</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="reservationTime">Reservation Time</label>
+            <select id="reservationTime">
+                <option value="midweek">אמצע שבוע</option>
+                <option value="friday">שישי</option>
+                <option value="saturday">שבת</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="groupSize">Group Size</label>
+            <select id="groupSize">
+                <option value="15_minimum">15 מינימום</option>
+                <option value="31_minimum">31 מינימום</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tariffType">Tariff Type</label>
+            <select id="tariffType">
+                <option value="before_feb">Before February (this year)</option>
+                <option value="after_feb">After February (this year)</option>
+            </select>
+        </div>
+
+        <div class="divider"></div>
+        
+        <button class="btn" id="generateBtn" onclick="generateDraft()">
+            <span id="btnText">Generate Smart Draft</span>
+        </button>
+        
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Outlook) {
+                document.getElementById("generateBtn").disabled = false;
+            }
+        });
+
+        function saveApiKey() {
+            const key = document.getElementById("apiKey").value.trim();
+            if (!key) return alert("Please enter a key");
+
+            Office.context.roamingSettings.set("api_key", key);
+            Office.context.roamingSettings.saveAsync((result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    alert("API Key saved!");
+                } else {
+                    alert("Failed to save API Key");
+                }
+            });
+        }
+
+        async function generateDraft() {
+            const btn = document.getElementById("generateBtn");
+            const status = document.getElementById("status");
+            const btnText = document.getElementById("btnText");
+            
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Generating...';
+            status.style.display = 'none';
+            
+            try {
+                // Get the current email item
+                const item = Office.context.mailbox.item;
+                
+                // Get form values
+                const formData = {
+                    response_type: document.getElementById("response-type").value,
+                    language: document.getElementById("language").value,
+                    group_type: document.getElementById("groupType").value,
+                    reservation_time: document.getElementById("reservationTime").value,
+                    group_size: document.getElementById("groupSize").value,
+                    tariff_type: document.getElementById("tariffType").value
+                };
+                
+                // Extract email details
+                const emailData = {
+                    subject: item.subject,
+                    from: item.from ? item.from.emailAddress : '',
+                    sender_name: item.from ? item.from.displayName : '',
+                    ...formData
+                };
+                
+                // Get the email body
+                item.body.getAsync(Office.CoercionType.Text, async (result) => {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        emailData.body = result.value;
+
+                        const apiKey = Office.context.roamingSettings.get("api_key");
+                        if (!apiKey) throw new Error("API key not set. Please enter it in settings.");
+                        
+                        // Calling Flask backend
+                        const response = await fetch('https://khn-outlook-backend.onrender.com/api/generate-template', {
+                            method: 'POST',
+                            headers: {
+                                'X-API-Key': apiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(emailData)
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Server error: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+
+                        // Create reply with the generated text
+                        item.displayReplyAllForm({
+                            htmlBody: data.draft_text
+                        });
+                        
+                        showStatus('Success! Reply window opened with generated draft.', 'success');
+                        
+                    } else {
+                        throw new Error('Failed to read email body');
+                    }
+                    
+                    // Re-enable button in the callback
+                    btn.disabled = false;
+                    btnText.textContent = 'Generate Smart Draft';
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Generate Smart Draft';
+            }
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById("status");
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
