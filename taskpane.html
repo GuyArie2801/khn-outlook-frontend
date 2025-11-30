@@ -195,7 +195,22 @@
             if (info.host === Office.HostType.Outlook) {
                 document.getElementById("generateBtn").disabled = false;
             }
+
+            // Wake backend on load
+            wakeBackend();
         });
+
+        async function wakeBackend() {
+            try {
+                // Fire and forget request to warm the Render server
+                fetch("https://khn-outlook-backend.onrender.com/", {
+                    method: "GET",
+                    cache: "no-cache"
+                });
+            } catch (err) {
+                console.warn("Backend wake-up failed (ignored):", err);
+            }
+        }
 
         function saveApiKey() {
             const key = document.getElementById("apiKey").value.trim();
