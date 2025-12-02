@@ -130,6 +130,12 @@
             <button class="btn" onclick="saveApiKey()">Save API Key</button>
         </div>
 
+        <button class="btn" id="generateAIBtn" onclick="generateAIDraft()">
+            <span id="btnTextAI">✨ Generate AI Draft</span>
+        </button>
+
+        <div class="divider"></div>
+
         <div class="form-group">
             <label for="response-type">Response Type</label>
             <select id="response-type">
@@ -185,10 +191,6 @@
         
         <button class="btn" id="generateBtn" onclick="generateDraft()">
             <span id="btnText">Generate Smart Draft</span>
-        </button>
-
-        <button class="btn" id="generateAIBtn" onclick="generateAIDraft()">
-            <span id="btnTextAI">✨ Generate AI Draft</span>
         </button>
         
         <div class="status" id="status"></div>
@@ -316,7 +318,7 @@
             const btnText = document.getElementById("btnTextAI");
             
             btn.disabled = true;
-            btnText.innerHTML = '<span class="loading"></span> Generating...';
+            btnText.innerHTML = '<span class="loading"></span> AI-Generating...';
             status.style.display = 'none';
             
             try {
@@ -339,7 +341,7 @@
                         if (!apiKey) throw new Error("API key not set. Please enter it in settings.");
                         
                         // Calling Flask backend
-                        const response = await fetch('https://khn-outlook-backend.onrender.com/api/generate-ai-draft', {
+                        const response = await fetch('http://localhost:5000/api/generate-ai-draft', {
                             method: 'POST',
                             headers: {
                                 'X-API-Key': apiKey,
@@ -367,14 +369,14 @@
                     
                     // Re-enable button in the callback
                     btn.disabled = false;
-                    btnText.textContent = 'Generate Smart Draft';
+                    btnText.textContent = '✨ Generate AI Draft';
                 });
                 
             } catch (error) {
                 console.error('Error:', error);
                 showStatus(`Error: ${error.message}`, 'error');
                 btn.disabled = false;
-                btnText.textContent = 'Generate Smart Draft';
+                btnText.textContent = '✨ Generate AI Draft';
             }
         }
         
