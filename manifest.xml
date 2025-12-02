@@ -6,11 +6,11 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
   
-  <Id>82354671-7095-1279-5497-124651783012</Id>
+  <Id>82354671-7095-1279-5497-124651783013</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>KfarHanokdim</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Smart Draft Generator"/>
+  <DisplayName DefaultValue="KHN - Draft Generator"/>
   <Description DefaultValue="Generate smart email drafts with AI"/>
   <IconUrl DefaultValue="https://guyarie2801.github.io/khn-outlook-frontend/assets/icon-64.png"/>
   <HighResolutionIconUrl DefaultValue="https://guyarie2801.github.io/khn-outlook-frontend/assets/icon-128.png"/>
@@ -97,7 +97,7 @@
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="Smart Draft"/>
-          <bt:String id="TaskpaneButton.Label" DefaultValue="Generate Smart Draft"/>
+          <bt:String id="TaskpaneButton.Label" DefaultValue="KHN - Draft Generator"/>
         </bt:ShortStrings>
         <bt:LongStrings>
           <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Generate a smart reply draft"/>

@@ -186,6 +186,10 @@
         <button class="btn" id="generateBtn" onclick="generateDraft()">
             <span id="btnText">Generate Smart Draft</span>
         </button>
+
+        <button class="btn" id="generateAIBtn" onclick="generateAIDraft()">
+            <span id="btnTextAI">✨ Generate AI Draft</span>
+        </button>
         
         <div class="status" id="status"></div>
     </div>
@@ -194,6 +198,7 @@
         Office.onReady((info) => {
             if (info.host === Office.HostType.Outlook) {
                 document.getElementById("generateBtn").disabled = false;
+                document.getElementById("generateAIBtn").disabled = false;
             }
 
             // Wake backend on load
@@ -287,6 +292,74 @@
                         });
                         
                         showStatus('Success! Reply window opened with generated draft.', 'success');
+                        
+                    } else {
+                        throw new Error('Failed to read email body');
+                    }
+                    
+                    // Re-enable button in the callback
+                    btn.disabled = false;
+                    btnText.textContent = 'Generate Smart Draft';
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Generate Smart Draft';
+            }
+        }
+
+        async function generateAIDraft() {
+            const btn = document.getElementById("generateAIBtn");
+            const status = document.getElementById("status");
+            const btnText = document.getElementById("btnTextAI");
+            
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Generating...';
+            status.style.display = 'none';
+            
+            try {
+                // Get the current email item
+                const item = Office.context.mailbox.item;
+                
+                // Extract email details
+                const emailData = {
+                    subject: item.subject,
+                    from: item.from ? item.from.emailAddress : '',
+                    sender_name: item.from ? item.from.displayName : '',
+                };
+                
+                // Get the email body
+                item.body.getAsync(Office.CoercionType.Text, async (result) => {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        emailData.body = result.value;
+
+                        const apiKey = Office.context.roamingSettings.get("api_key");
+                        if (!apiKey) throw new Error("API key not set. Please enter it in settings.");
+                        
+                        // Calling Flask backend
+                        const response = await fetch('https://khn-outlook-backend.onrender.com/api/generate-ai-draft', {
+                            method: 'POST',
+                            headers: {
+                                'X-API-Key': apiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(emailData)
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Server error: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+
+                        // Create reply with the generated text
+                        item.displayReplyAllForm({
+                            htmlBody: data.draft_text
+                        });
+                        
+                        showStatus('Success! Reply window opened with AI-generated draft.', 'success');
                         
                     } else {
                         throw new Error('Failed to read email body');
